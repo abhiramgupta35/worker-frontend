@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&display=swap');
+
+/* ── Design Tokens ────────────────────────────── */
+:root {
+  --cream: #F8F6F0;
+  --parchment: #F0EDE4;
+  --card: #FFFFFF;
+  --navy: #1E2A4A;
+  --navy-light: #2D3F6B;
+  --gold: #C8963E;
+  --gold-light: #E8B86D;
+  --gold-pale: #FDF3E0;
+  --ink: #1A1A2E;
+  --muted: #6B7280;
+  --border: #E5E0D4;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--ink);
+  font-family: 'Syne', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--parchment);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C9C2B2;
+}
+
+/* ── Cards ────────────────────────────────────── */
+.p-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+
+.p-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* ── Sidebar ──────────────────────────────────── */
+.p-sidebar {
+  background: linear-gradient(160deg, #1E2A4A 0%, #162038 60%, #0F1727 100%);
+  box-shadow: 4px 0 24px rgba(30, 42, 74, 0.12);
+}
+
+.p-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  width: 100%;
+  letter-spacing: 0.01em;
+}
+
+.p-sidebar-item:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.p-sidebar-item.active {
+  background: linear-gradient(135deg, #C8963E, #E8B86D);
+  color: #FFFFFF;
+  box-shadow: 0 4px 18px rgba(200, 150, 62, 0.45);
+  font-weight: 700;
+}
+
+/* ── Buttons ──────────────────────────────────── */
+.p-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #C8963E, #E8B86D);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(200, 150, 62, 0.3);
+  transition: all 0.2s ease;
+}
+
+.p-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(200, 150, 62, 0.45);
+}
+
+.p-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.p-btn-ghost:hover {
+  background: var(--parchment);
+  color: var(--ink);
+  border-color: #C9C2B2;
+}
+
+/* ── Inputs ───────────────────────────────────── */
+.p-input {
+  width: 100%;
+  background: var(--parchment);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--ink);
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Syne', sans-serif;
+}
+
+.p-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200, 150, 62, 0.12);
+  background: #FFFDF8;
+}
+
+.p-input::placeholder {
+  color: var(--muted-light);
+}
+
+/* ── Table ────────────────────────────────────── */
+.p-th {
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  background: var(--parchment);
+}
+
+.p-td {
+  padding: 16px 20px;
+  font-size: 0.875rem;
+  color: var(--ink);
+  border-bottom: 1px solid #F5F2EC;
+}
+
+tr:hover .p-td {
+  background: #FDFCF9;
+}
+
+tr:last-child .p-td {
+  border-bottom: none;
+}
+
+/* ── Badge ────────────────────────────────────── */
+.p-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.p-badge-green {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.p-badge-orange {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.p-badge-red {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.p-badge-blue {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+/* ── Label ────────────────────────────────────── */
+.p-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* ── Modal overlay animation ──────────────────── */
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-animate {
+  animation: modal-in 0.22s ease-out;
+}
+
+/* ── Gold divider ─────────────────────────────── */
+.gold-divider {
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, #C8963E, #E8B86D);
+  border-radius: 2px;
+  margin-bottom: 4px;
+}

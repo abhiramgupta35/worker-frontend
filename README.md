@@ -1,16 +1,78 @@
-# React + Vite
+# 👷‍♂️ Worker Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive and modern web application for managing workers, owners, assignments, and payments. Designed for efficiency and ease of use, with a sleek UI and robust backend integration.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Worker Management**: Track worker availability, status, and details.
+- **Owner Management**: Manage clients/owners, assignment histories, and bulk payments.
+- **Assignments**: Assign workers to specific tasks (e.g., Kooli, Grass Cutter) with daily tracking.
+- **Payment Tracking**: Keep precise records of amounts owed, payments made, and daily earnings.
+- **Daily Reports**: Generate comprehensive daily summaries of work done and revenue collected.
+- **Responsive Design**: A polished interface that looks great on both desktop and mobile devices.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React (Vite), Tailwind CSS, React Router, Axios
+- **Backend**: Django REST Framework, PostgreSQL
+- **Icons**: Lucide React
 
-## Expanding the ESLint configuration
+## 🚀 Getting Started
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository** (or download the source):
+   ```bash
+   git clone <your-repo-url>
+   cd frontend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables**:
+   Create a `.env` file in the root of the `frontend` directory based on the `.env.example` provided:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Ensure your `.env` contains the correct API URL:
+   ```env
+   VITE_API_URL=http://localhost:8000/api/
+   ```
+
+4. **Run the Development Server**:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at `http://localhost:5173`.
+
+## 🌍 Deployment to Vercel
+
+This frontend is configured and ready to be deployed to Vercel.
+
+1. **Push to GitHub**: Make sure your code is pushed to a GitHub repository.
+2. **Import to Vercel**:
+   - Log in to your [Vercel dashboard](https://vercel.com/).
+   - Click **Add New** > **Project**.
+   - Import your GitHub repository.
+3. **Configure Project Settings**:
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+4. **Environment Variables**:
+   - In the Vercel project settings, go to the **Environment Variables** section.
+   - Add a new variable:
+      (or your production API URL)
+5. **Deploy**: Click **Deploy**! Vercel will automatically build and host your site.
+
+## 📄 License
+
+This project is proprietary and confidential.

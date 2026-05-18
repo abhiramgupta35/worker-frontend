@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
-import { Plus, WalletCards, ToggleLeft, ToggleRight } from 'lucide-react';
-import { workerService, ownerService, assignmentService, paymentService } from '../services/api';
+import { Plus, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import { workerService, ownerService, assignmentService } from '../services/api';
 import { getWageConfig } from '../utils/wageConfig';
 
 const Assignments = () => {
@@ -12,13 +12,10 @@ const Assignments = () => {
     const [owners, setOwners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [addOpen, setAddOpen] = useState(false);
-    const [payOpen, setPayOpen] = useState(false);
-    const [selAss, setSelAss] = useState(null);
 
     const [formOwner, setFormOwner] = useState('');
     const [formDate, setFormDate] = useState('');
     const [selectedWorkers, setSelectedWorkers] = useState([]);
-    const [payment, setPayment] = useState({ assignment: '', amount_paid: 0, payment_status: 'Full Payment' });
 
     const fetchAll = async () => {
         setLoading(true);
@@ -78,21 +75,9 @@ const Assignments = () => {
         } catch (e) { console.error(e); }
     };
 
-    const handlePay = async (e) => {
-        e.preventDefault();
-        try { await paymentService.create(payment); setPayOpen(false); fetchAll(); }
-        catch (e) { console.error(e); }
-    };
-
     const handleToggle = async (a) => {
         try { await assignmentService.toggleActive(a.id); fetchAll(); }
         catch (e) { console.error(e); }
-    };
-
-    const openPay = (a) => {
-        setSelAss(a);
-        setPayment({ assignment: a.id, amount_paid: parseFloat(a.amount), payment_status: 'Full Payment' });
-        setPayOpen(true);
     };
 
     const badge = (s) => {
@@ -100,10 +85,29 @@ const Assignments = () => {
         return <span className={`p-badge ${cls}`}>{s}</span>;
     };
 
+    // Owner lookup map for deriving per-row payment status from owner-level totals.
+    const ownerMap = React.useMemo(() => {
+        const m = {};
+        owners.forEach(o => { m[o.id] = o; });
+        return m;
+    }, [owners]);
+
+    // Payment status of an assignment is derived from the OWNER's outstanding balance
+    // (payments are now collected at owner level, not per-assignment).
+    const getRowStatus = (r) => {
+        const o = ownerMap[r.owner];
+        if (!o) return 'Pending';
+        const work = parseFloat(o.total_work_amount || 0);
+        const paid = parseFloat(o.total_paid || 0);
+        if (work > 0 && paid >= work) return 'Full Payment';
+        if (paid > 0) return 'Half Payment';
+        return 'Pending';
+    };
+
     // Group summary
     const activeCount = assignments.filter(a => a.is_active).length;
     const inactiveCount = assignments.filter(a => !a.is_active).length;
-    const totalPending = assignments.filter(a => a.status !== 'Full Payment' && a.is_active).length;
+    const totalPending = assignments.filter(a => a.is_active && getRowStatus(a) !== 'Full Payment').length;
 
     const columns = [
         { header: 'Date', render: r => <span className="text-[#6B7280] text-xs">{r.date}</span> },
@@ -125,7 +129,7 @@ const Assignments = () => {
         { header: 'Hrs', render: r => <span className="text-[#6B7280]">{r.hours_worked || '—'}</span> },
         { header: 'Amount', render: r => <span className={`font-bold text-[#1A1A2E] ${!r.is_active ? 'opacity-50' : ''}`}>₹{r.amount}</span> },
         {
-            header: 'Payment', render: r => r.is_active ? badge(r.status) : (
+            header: 'Payment', render: r => r.is_active ? badge(getRowStatus(r)) : (
                 <span className="p-badge" style={{ background: '#F3F4F6', color: '#9CA3AF' }}>Inactive</span>
             )
         },
@@ -137,14 +141,6 @@ const Assignments = () => {
                             : 'border-green-200 text-green-600 hover:bg-green-50'
                         }`}>
                     {r.is_active ? <><ToggleRight size={13} /> Active</> : <><ToggleLeft size={13} /> Inactive</>}
-                </button>
-            )
-        },
-        {
-            header: 'Pay', render: r => r.is_active && r.status !== 'Full Payment' && (
-                <button onClick={() => openPay(r)}
-                    className="flex items-center gap-1 text-xs font-semibold text-[#C8963E] hover:underline">
-                    <WalletCards size={13} /> Pay
                 </button>
             )
         },
@@ -274,35 +270,6 @@ const Assignments = () => {
                 </form>
             </Modal>
 
-            {/* ── Payment Modal ────────────────────────────────────── */}
-            <Modal isOpen={payOpen} onClose={() => setPayOpen(false)} title="Record Payment">
-                <form onSubmit={handlePay} className="space-y-4">
-                    <div className="p-4 rounded-xl bg-[#F8F6F0] border border-[#E5E0D4]">
-                        <p className="p-label">Assignment</p>
-                        <p className="text-sm font-semibold text-[#1A1A2E]">{selAss?.worker_name} → {selAss?.owner_name}</p>
-                        <p className="text-xl font-bold text-[#1A1A2E] mt-1">Total: ₹{selAss?.amount}</p>
-                    </div>
-                    <div><label className="p-label">Amount Paid (₹)</label>
-                        <input type="number" required max={selAss?.amount} className="p-input" value={payment.amount_paid}
-                            onChange={e => {
-                                const v = parseFloat(e.target.value) || 0;
-                                setPayment({
-                                    ...payment, amount_paid: v,
-                                    payment_status: v >= selAss?.amount ? 'Full Payment' : v > 0 ? 'Half Payment' : 'Pending'
-                                });
-                            }} />
-                    </div>
-                    <div><label className="p-label">Auto Status</label>
-                        <input readOnly className="p-input bg-[#F8F6F0] cursor-not-allowed" value={payment.payment_status} />
-                    </div>
-                    <div className="flex gap-3 pt-1">
-                        <button type="button" onClick={() => setPayOpen(false)} className="p-btn-ghost flex-1">Cancel</button>
-                        <button type="submit" disabled={payment.amount_paid <= 0} className="p-btn-primary flex-1 justify-center">
-                            Save Payment
-                        </button>
-                    </div>
-                </form>
-            </Modal>
         </Layout>
     );
 };

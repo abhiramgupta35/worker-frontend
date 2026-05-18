@@ -644,7 +644,7 @@ const Owners = () => {
                     <div>
                         <label className="p-label">Amount Received (₹)</label>
                         <div className="relative mt-1">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C8963E] text-xl font-bold">₹</span>
+                            
                             <input
                                 type="number"
                                 required

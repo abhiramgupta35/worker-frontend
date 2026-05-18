@@ -2,28 +2,41 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import StatCard from '../components/StatCard';
 import DataTable from '../components/DataTable';
-import { Users, UserCheck, UserPlus, Briefcase, IndianRupee, Wallet, Clock, Calendar } from 'lucide-react';
-import { workerService, reportService, assignmentService } from '../services/api';
+import { Users, UserCheck, UserPlus, Briefcase, IndianRupee, Wallet, Clock, Calendar, Download, Loader2 } from 'lucide-react';
+import { workerService, reportService } from '../services/api';
 import { format } from 'date-fns';
+import { generateReportPdf } from '../utils/reportPdf';
 
 const todayStr = () => format(new Date(), 'yyyy-MM-dd');
+const todayMonthStr = () => format(new Date(), 'yyyy-MM');
+const todayYearStr = () => format(new Date(), 'yyyy');
 
 const Dashboard = () => {
+    const [period, setPeriod] = useState('day'); // 'day' | 'month' | 'year'
     const [filterDate, setFilterDate] = useState(todayStr());
+    const [filterMonth, setFilterMonth] = useState(todayMonthStr());
+    const [filterYear, setFilterYear] = useState(todayYearStr());
     const [stats, setStats] = useState({
         totalWorkers: 0, availableWorkers: 0, assignedWorkers: 0,
         totalWorkToday: 0, totalEarningsToday: 0, totalCollected: 0, pendingPayments: 0,
     });
     const [recent, setRecent] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
 
-    const fetchData = useCallback(async (date) => {
+    // Build the params for the generic report endpoint based on the selected period.
+    const buildReportParams = useCallback(() => {
+        if (period === 'month') return { period: 'month', month: filterMonth };
+        if (period === 'year') return { period: 'year', year: filterYear };
+        return { period: 'day', date: filterDate };
+    }, [period, filterDate, filterMonth, filterYear]);
+
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [wRes, rRes, aRes] = await Promise.all([
+            const [wRes, rRes] = await Promise.all([
                 workerService.getAll(),
-                reportService.getDaily(date),
-                assignmentService.getAll(),
+                reportService.get(buildReportParams()),
             ]);
             const w = wRes.data;
             const r = rRes.data.summary;
@@ -36,18 +49,43 @@ const Dashboard = () => {
                 totalCollected: r.collected_amount,
                 pendingPayments: r.pending_amount,
             });
-            const filtered = aRes.data.filter(a => a.date === date);
-            setRecent(filtered.slice(0, 10));
+            // For day view show the day's assignments; for month/year show the most recent 15.
+            const list = rRes.data.assignments || [];
+            setRecent(period === 'day' ? list : list.slice(-15).reverse());
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
-    }, []);
+    }, [buildReportParams, period]);
 
-    useEffect(() => { fetchData(filterDate); }, [filterDate, fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    const isToday = filterDate === todayStr();
-    const displayDate = filterDate
+    const handleDownloadPdf = async () => {
+        setDownloading(true);
+        try {
+            // Always fetch fresh data right before generating, so the PDF is current.
+            const res = await reportService.get(buildReportParams());
+            generateReportPdf(res.data);
+        } catch (e) {
+            console.error(e);
+            alert('Failed to generate PDF.');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const isToday = period === 'day' && filterDate === todayStr();
+    const displayDate = period === 'day' && filterDate
         ? format(new Date(filterDate + 'T00:00:00'), 'MMM d, yyyy')
         : '';
+    const periodHeading = (() => {
+        if (period === 'day') return isToday ? 'Today' : displayDate;
+        if (period === 'month') {
+            try {
+                const [y, m] = filterMonth.split('-');
+                return format(new Date(Number(y), Number(m) - 1, 1), 'MMMM yyyy');
+            } catch { return filterMonth; }
+        }
+        return `Year ${filterYear}`;
+    })();
 
     const statusBadge = (s) => {
         const cls = s === 'Full Payment' ? 'p-badge-green' : s === 'Half Payment' ? 'p-badge-orange' : 'p-badge-red';
@@ -55,6 +93,7 @@ const Dashboard = () => {
     };
 
     const columns = [
+        ...(period !== 'day' ? [{ header: 'Date', render: r => <span className="text-[#6B7280] text-xs">{r.date}</span> }] : []),
         { header: 'Worker', accessor: 'worker_name' },
         { header: 'Owner', accessor: 'owner_name' },
         {
@@ -76,13 +115,13 @@ const Dashboard = () => {
                     style={{ background: 'radial-gradient(circle at 80% 50%, #C8963E, transparent 65%)' }} />
                 <div>
                     <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">
-                        {isToday ? 'Good Morning' : 'Viewing History'}
+                        {isToday ? 'Good Morning' : 'Viewing'}
                     </p>
                     <h2 className="text-white text-2xl font-bold leading-tight">
-                        {isToday ? 'Welcome back, Admin 👋' : displayDate}
+                        {isToday ? 'Welcome back, Admin 👋' : periodHeading}
                     </h2>
                     <p className="text-white/50 text-sm mt-1">
-                        {isToday ? "Here's what's happening on your field today." : "Historical view for this date."}
+                        {isToday ? "Here's what's happening on your field today." : `Showing ${period} view.`}
                     </p>
                 </div>
                 <div className="hidden md:flex gap-6 text-right">
@@ -98,27 +137,76 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Date filter bar */}
-            <div className="flex items-center gap-3 mb-6">
-                <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#C8963E]" size={15} />
-                    <input
-                        type="date"
-                        className="p-input !pl-10 h-10 text-sm w-[190px]"
-                        value={filterDate}
-                        onChange={e => setFilterDate(e.target.value)}
-                    />
+            {/* Period + filter bar */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+                {/* Period toggle */}
+                <div className="inline-flex rounded-lg border border-[#E5E0D4] bg-white p-1">
+                    {[
+                        { key: 'day', label: 'Day' },
+                        { key: 'month', label: 'Month' },
+                        { key: 'year', label: 'Year' },
+                    ].map(p => (
+                        <button
+                            key={p.key}
+                            onClick={() => setPeriod(p.key)}
+                            className={`px-3.5 h-8 text-xs font-semibold rounded-md transition-colors ${period === p.key
+                                ? 'bg-[#1E2A4A] text-white'
+                                : 'text-[#6B7280] hover:bg-[#F8F6F0]'}`}>
+                            {p.label}
+                        </button>
+                    ))}
                 </div>
-                {!isToday && (
+
+                {/* Filter input — depends on period */}
+                {period === 'day' && (
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#C8963E]" size={15} />
+                        <input type="date"
+                            className="p-input !pl-10 h-10 text-sm w-[190px]"
+                            value={filterDate}
+                            onChange={e => setFilterDate(e.target.value)} />
+                    </div>
+                )}
+                {period === 'month' && (
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#C8963E]" size={15} />
+                        <input type="month"
+                            className="p-input !pl-10 h-10 text-sm w-[190px]"
+                            value={filterMonth}
+                            onChange={e => setFilterMonth(e.target.value)} />
+                    </div>
+                )}
+                {period === 'year' && (
+                    <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#C8963E]" size={15} />
+                        <input type="number" min="2000" max="2100"
+                            className="p-input !pl-10 h-10 text-sm w-[140px]"
+                            value={filterYear}
+                            onChange={e => setFilterYear(e.target.value)} />
+                    </div>
+                )}
+
+                {period === 'day' && !isToday && (
                     <button
                         onClick={() => setFilterDate(todayStr())}
                         className="text-xs font-semibold text-[#C8963E] hover:text-[#9B7230] underline transition-colors">
                         Back to Today
                     </button>
                 )}
-                <span className="text-xs text-[#9CA3AF]">
-                    {isToday ? 'Showing today\'s data' : `Showing data for ${displayDate}`}
-                </span>
+
+                <span className="text-xs text-[#9CA3AF]">Showing {periodHeading}</span>
+
+                {/* Download PDF button */}
+                <button
+                    onClick={handleDownloadPdf}
+                    disabled={downloading || loading}
+                    className="ml-auto inline-flex items-center gap-2 h-10 px-4 rounded-lg text-sm font-semibold text-white
+                               bg-gradient-to-r from-[#1E2A4A] to-[#2D3F6B] hover:from-[#2D3F6B] hover:to-[#3D5285]
+                               disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow">
+                    {downloading
+                        ? <><Loader2 size={15} className="animate-spin" /> Generating...</>
+                        : <><Download size={15} /> Download PDF</>}
+                </button>
             </div>
 
             {/* Stat cards row 1 */}
@@ -126,14 +214,14 @@ const Dashboard = () => {
                 <StatCard label="Total Workers" value={stats.totalWorkers} icon={Users} subtext="All time" />
                 <StatCard label="Available" value={stats.availableWorkers} icon={UserPlus} subtext="Right now" />
                 <StatCard label="Assigned" value={stats.assignedWorkers} icon={UserCheck} subtext="Right now" />
-                <StatCard label="Works" value={stats.totalWorkToday} icon={Briefcase} subtext={isToday ? 'Today' : displayDate} accent />
+                <StatCard label="Works" value={stats.totalWorkToday} icon={Briefcase} subtext={periodHeading} accent />
             </div>
 
             {/* Stat cards row 2 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-                <StatCard label="Total Earnings" value={`₹${stats.totalEarningsToday}`} icon={IndianRupee} subtext={isToday ? 'Today' : displayDate} accent />
-                <StatCard label="Collected" value={`₹${stats.totalCollected}`} icon={Wallet} subtext={isToday ? 'Today' : displayDate} />
-                <StatCard label="Pending Payments" value={`₹${stats.pendingPayments}`} icon={Clock} subtext={isToday ? 'Today' : displayDate} />
+                <StatCard label="Total Earnings" value={`₹${stats.totalEarningsToday}`} icon={IndianRupee} subtext={periodHeading} accent />
+                <StatCard label="Collected" value={`₹${stats.totalCollected}`} icon={Wallet} subtext={periodHeading} />
+                <StatCard label="Pending Payments" value={`₹${stats.pendingPayments}`} icon={Clock} subtext={periodHeading} />
             </div>
 
             {/* Assignments table */}
@@ -142,7 +230,7 @@ const Dashboard = () => {
                     <div>
                         <div className="gold-divider" />
                         <h3 className="text-[15px] font-semibold text-[#1A1A2E]">
-                            Assignments — {isToday ? 'Today' : displayDate}
+                            Assignments — {periodHeading}
                         </h3>
                     </div>
                     <span className="text-xs text-[#9CA3AF] font-medium">{recent.length} record(s)</span>

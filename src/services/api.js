@@ -71,7 +71,9 @@ export const paymentService = {
 };
 
 export const reportService = {
-    getDaily: (date) => api.get('daily-report/', { params: { date } }),
+    getDaily: (date) => api.get('daily-report/', { params: { period: 'day', date } }),
+    // params: { period: 'day'|'month'|'year', date?, month?, year? }
+    get: (params) => api.get('daily-report/', { params }),
 };
 
 export default api;

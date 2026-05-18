@@ -68,14 +68,14 @@ const Settings = () => {
                                     </div>
                                     <p className="text-sm text-[#9CA3AF] mb-4">Fixed daily wage paid to Kooli workers regardless of hours.</p>
                                     <label className="p-label">Daily Wage Amount</label>
-                                    <div className="relative mt-1">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C8963E] text-xl font-bold">₹</span>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-[#C8963E] text-2xl font-bold">₹</span>
                                         <input
                                             type="number"
                                             min="1"
                                             step="1"
                                             required
-                                            className="p-input pl-9 text-2xl font-bold h-14"
+                                            className="p-input text-2xl font-bold h-14"
                                             value={config.kooliRate}
                                             onChange={e => handleChange('kooliRate', e.target.value)}
                                         />
@@ -98,14 +98,14 @@ const Settings = () => {
                                     </div>
                                     <p className="text-sm text-[#9CA3AF] mb-4">Hourly wage multiplied by hours worked for each assignment.</p>
                                     <label className="p-label">Hourly Wage Amount</label>
-                                    <div className="relative mt-1">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C8963E] text-xl font-bold">₹</span>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-[#C8963E] text-2xl font-bold">₹</span>
                                         <input
                                             type="number"
                                             min="1"
                                             step="1"
                                             required
-                                            className="p-input pl-9 text-2xl font-bold h-14"
+                                            className="p-input text-2xl font-bold h-14"
                                             value={config.grassCutterRate}
                                             onChange={e => handleChange('grassCutterRate', e.target.value)}
                                         />

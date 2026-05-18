@@ -4,6 +4,44 @@ const api = axios.create({
     baseURL: 'https://worker-management-fou0.onrender.com/api/',
 });
 
+export const TOKEN_KEY = 'wm_token';
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+// Attach token (if any) to every request
+api.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+});
+
+// On 401, clear token and bounce to /login (unless we're already on the login page or hitting auth endpoints)
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        if (err.response?.status === 401) {
+            const url = err.config?.url || '';
+            if (!url.includes('auth/login') && !url.includes('auth/register')) {
+                clearToken();
+                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+                    window.location.href = '/login';
+                }
+            }
+        }
+        return Promise.reject(err);
+    }
+);
+
+export const authService = {
+    login: (username, password) => api.post('auth/login/', { username, password }),
+    logout: () => api.post('auth/logout/'),
+    me: () => api.get('auth/me/'),
+};
+
 export const workerService = {
     getAll: () => api.get('workers/'),
     create: (data) => api.post('workers/', data),

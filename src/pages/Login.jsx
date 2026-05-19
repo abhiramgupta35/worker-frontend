@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Layers, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -57,10 +57,7 @@ const Login = () => {
                 }}>
                 {/* Brand */}
                 <div className="flex flex-col items-center mb-7">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
-                        style={{ background: 'linear-gradient(135deg,#C8963E,#E8B86D)' }}>
-                        <Layers size={28} color="#fff" />
-                    </div>
+                    <img src="/logo-worker.webp" alt="Logo" className="w-14 h-14 rounded-2xl object-cover mb-3 bg-white/5 p-1" />
                     <h1 className="text-white font-bold text-xl tracking-tight">Worker Management</h1>
                     <div className="w-12 h-px bg-white/30 mt-3" />
                 </div>

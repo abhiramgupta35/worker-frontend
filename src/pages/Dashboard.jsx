@@ -3,15 +3,17 @@ import Layout from '../components/Layout';
 import StatCard from '../components/StatCard';
 import DataTable from '../components/DataTable';
 import { Users, UserCheck, UserPlus, Briefcase, IndianRupee, Wallet, Clock, Calendar, Download, Loader2 } from 'lucide-react';
-import { workerService, reportService } from '../services/api';
+import { workerService, reportService, ownerService } from '../services/api';
 import { format } from 'date-fns';
 import { generateReportPdf } from '../utils/reportPdf';
+import { useAuth } from '../context/AuthContext';
 
 const todayStr = () => format(new Date(), 'yyyy-MM-dd');
 const todayMonthStr = () => format(new Date(), 'yyyy-MM');
 const todayYearStr = () => format(new Date(), 'yyyy');
 
 const Dashboard = () => {
+    const { user } = useAuth();
     const [period, setPeriod] = useState('day'); // 'day' | 'month' | 'year'
     const [filterDate, setFilterDate] = useState(todayStr());
     const [filterMonth, setFilterMonth] = useState(todayMonthStr());
@@ -21,6 +23,7 @@ const Dashboard = () => {
         totalWorkToday: 0, totalEarningsToday: 0, totalCollected: 0, pendingPayments: 0,
     });
     const [recent, setRecent] = useState([]);
+    const [owners, setOwners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
 
@@ -34,12 +37,14 @@ const Dashboard = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [wRes, rRes] = await Promise.all([
+            const [wRes, rRes, oRes] = await Promise.all([
                 workerService.getAll(),
                 reportService.get(buildReportParams()),
+                ownerService.getAll(),
             ]);
             const w = wRes.data;
             const r = rRes.data.summary;
+            setOwners(oRes.data);
             setStats({
                 totalWorkers: w.length,
                 availableWorkers: w.filter(x => x.status === 'AVAILABLE').length,
@@ -72,6 +77,18 @@ const Dashboard = () => {
         }
     };
 
+    const getDisplayName = () => {
+        if (user?.first_name) {
+            return `${user.first_name} ${user.last_name || ''}`.trim();
+        }
+        if (user?.username) {
+            return user.username.charAt(0).toUpperCase() + user.username.slice(1);
+        }
+        return 'Admin';
+    };
+
+    const displayName = getDisplayName();
+
     const isToday = period === 'day' && filterDate === todayStr();
     const displayDate = period === 'day' && filterDate
         ? format(new Date(filterDate + 'T00:00:00'), 'MMM d, yyyy')
@@ -92,6 +109,24 @@ const Dashboard = () => {
         return <span className={`p-badge ${cls}`}>{s}</span>;
     };
 
+    // Build owner map and derive payment status from owner-level totals
+    // (payments are now collected per-owner, not per-assignment).
+    const ownerMap = React.useMemo(() => {
+        const m = {};
+        owners.forEach(o => { m[o.id] = o; });
+        return m;
+    }, [owners]);
+
+    const getRowStatus = (r) => {
+        const o = ownerMap[r.owner];
+        if (!o) return 'Pending';
+        const work = parseFloat(o.total_work_amount || 0);
+        const paid = parseFloat(o.total_paid || 0);
+        if (work > 0 && paid >= work) return 'Full Payment';
+        if (paid > 0) return 'Half Payment';
+        return 'Pending';
+    };
+
     const columns = [
         ...(period !== 'day' ? [{ header: 'Date', render: r => <span className="text-[#6B7280] text-xs">{r.date}</span> }] : []),
         { header: 'Worker', accessor: 'worker_name' },
@@ -103,7 +138,7 @@ const Dashboard = () => {
         },
         { header: 'Hours', accessor: 'hours_worked' },
         { header: 'Amount', render: r => <span className="font-semibold text-[#1A1A2E]">₹{r.amount}</span> },
-        { header: 'Status', render: r => statusBadge(r.status) },
+        { header: 'Status', render: r => statusBadge(getRowStatus(r)) },
     ];
 
     return (
@@ -114,11 +149,9 @@ const Dashboard = () => {
                 <div className="absolute right-0 top-0 w-80 h-full opacity-10"
                     style={{ background: 'radial-gradient(circle at 80% 50%, #C8963E, transparent 65%)' }} />
                 <div>
-                    <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">
-                        {isToday ? 'Good Morning' : 'Viewing'}
-                    </p>
+                   
                     <h2 className="text-white text-2xl font-bold leading-tight">
-                        {isToday ? 'Welcome back, Admin 👋' : periodHeading}
+                        {isToday ? `Welcome back, ${displayName} 👋` : periodHeading}
                     </h2>
                     <p className="text-white/50 text-sm mt-1">
                         {isToday ? "Here's what's happening on your field today." : `Showing ${period} view.`}

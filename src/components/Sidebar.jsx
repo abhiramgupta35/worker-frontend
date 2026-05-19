@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    LayoutDashboard, Users, UserRound, ClipboardList, BarChart3, Settings, LogOut, Layers
+    LayoutDashboard, Users, UserRound, ClipboardList, BarChart3, Settings, LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -28,10 +28,7 @@ const Sidebar = () => {
             {/* Brand */}
             <div className="px-5 pt-8 pb-7">
                 <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'linear-gradient(135deg,#C8963E,#E8B86D)' }}>
-                        <Layers size={22} color="#fff" />
-                    </div>
+                    <img src="/logo-worker.webp" alt="Logo" className="w-11 h-11 rounded-xl object-cover flex-shrink-0" />
                     <div>
                         <h1 className="text-white font-bold text-lg tracking-tight leading-tight">Worker</h1>
                         <p className="text-[11px] text-white/40 font-semibold tracking-widest uppercase">Management</p>
